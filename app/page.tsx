@@ -1,5 +1,5 @@
 import { CopilotKit } from "@copilotkit/react-core";
-import { CarSalesChat } from "@/components/CarSalesChat";
+import { CarSalesChat } from "../components/CarSalesChat";
 
 export default function Home() {
   return (

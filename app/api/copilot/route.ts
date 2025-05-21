@@ -1,5 +1,5 @@
-import { createCopilotAction } from "@copilotkit/server";
-import { supabase } from "@/lib/supabase";
+import { createCopilotAction } from "@copilotkit/sdk-js";
+import { supabase } from "../../../lib/supabase";
 
 export const GET = createCopilotAction({
   actions: {
