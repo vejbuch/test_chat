@@ -10,14 +10,14 @@ export function CarSalesChat() {
       {
         name: "input",
         type: "string",
-        description: "Dotaz uživatele jako např. 'Model 3 červená'",
-      },
-    ],
+        description: "Např. Model 3, červená, Long Range"
+      }
+    ]
   });
 
   return (
     <CopilotSidebar
-      instructions="Pomáhej najít auta z databáze."
+      instructions="Pomáhej lidem najít dostupná auta z databáze."
       defaultOpen
     />
   );

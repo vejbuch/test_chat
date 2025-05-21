@@ -1,11 +1,10 @@
-import { createCopilotAction } from "@copilotkit/backend";
+import { copilotHandler, openai } from "@copilotkit/runtime";
 import { supabase } from "../../../lib/supabase";
 
-export const GET = createCopilotAction({
+export const POST = copilotHandler({
   actions: {
-    async searchCars({ input }) {
+    searchCars: async ({ input }) => {
       const query = input.toLowerCase();
-
       const { data, error } = await supabase
         .from("inzeraty_s_fotkou")
         .select("*")
@@ -17,8 +16,9 @@ export const GET = createCopilotAction({
       return data.map((car) => ({
         title: car.display_name,
         subtitle: `VIN: ${car.vin}`,
-        imageUrl: car.photo_url || "",
+        imageUrl: car.photo_url || ""
       }));
-    },
+    }
   },
+  provider: openai,
 });
