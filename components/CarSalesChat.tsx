@@ -1,9 +1,27 @@
 "use client";
 import { CopilotChat } from "@copilotkit/react-ui";
-import { useCopilotAction } from "@copilotkit/react-core";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useCopilotAction, useCopilotReadable } from "@copilotkit/react-core";
 
 export function CarSalesChat() {
-  // Definujeme akci pro vyhledávání aut
+  const [userInput, setUserInput] = useState("");
+  const [chatHistory, setChatHistory] = useState([
+    {
+      role: "assistant",
+      content: "Ahoj! Jak vám mohu pomoci najít perfektní Tesla?",
+    },
+  ]);
+
+  // Propojení s CopilotKit - sdílení chat historie
+  useCopilotReadable({
+    description: "Aktuální chat historie",
+    value: chatHistory,
+  });
+
+  // Akce pro vyhledávání
   useCopilotAction({
     name: "searchCars",
     description: "Vyhledá Tesla auta podle zadaných kritérií",
@@ -16,29 +34,69 @@ export function CarSalesChat() {
       },
     ],
     handler: async ({ searchTerm }) => {
-      // Zde bude vaše skutečná logika vyhledávání
       return `Vyhledávám Tesla vozidla pro: "${searchTerm}"`;
     },
   });
 
+  const handleSend = () => {
+    if (!userInput.trim()) return;
+    
+    const newUserMessage = { role: "user", content: userInput };
+    const updatedHistory = [...chatHistory, newUserMessage];
+    setChatHistory(updatedHistory);
+    setUserInput("");
+    
+    // Simulace odpovědi (CopilotKit převezme kontrolu)
+    setTimeout(() => {
+      const assistantMessage = {
+        role: "assistant", 
+        content: `Odpověď na: "${userInput}" - (CopilotKit zpracovává...)`
+      };
+      setChatHistory([...updatedHistory, assistantMessage]);
+    }, 500);
+  };
+
   return (
     <div className="max-w-2xl mx-auto p-4 h-screen flex flex-col">
       <h1 className="text-2xl font-bold mb-4">Tesla Asistent</h1>
+      <Card className="flex-1 overflow-y-auto space-y-2 p-4 bg-gray-50">
+        <CardContent className="space-y-4">
+          {chatHistory.map((msg, idx) => (
+            <div
+              key={idx}
+              className={`max-w-[75%] p-3 rounded-xl text-sm ${
+                msg.role === "assistant"
+                  ? "bg-gray-100 text-left self-start"
+                  : "bg-blue-100 text-right self-end ml-auto"
+              }`}
+            >
+              {msg.content}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+      <div className="flex gap-2 mt-4">
+        <Input
+          value={userInput}
+          onChange={(e) => setUserInput(e.target.value)}
+          placeholder="Napište zprávu…"
+          className="flex-1"
+          onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+        />
+        <Button onClick={handleSend}>Odeslat</Button>
+      </div>
       
-      <div className="flex-1 bg-gray-50 rounded-lg overflow-hidden">
+      {/* CopilotChat pro backend komunikaci */}
+      <div className="hidden">
         <CopilotChat
           instructions={`Jste asistent na stránce kde lidi inzerují ojeté Tesly. Pomáháte lidem najít správné auto podle jejich požadavků. 
 DŮLEŽITÉ: Když uživatel hledá auto, VŽDY použijte funkci "searchCars" s parametrem "searchTerm".
 UPOZRNĚNÍ: Nedomlouvej žádné schůzky a drž se pouze toho, že jsi asistent vyhledávání aut na Teslist.cz, kde jsou inzeráty lidí na ojeté Tesly.
 ZÁKAZY: Neřeš nic jiného než je zde popsáno, pokud nevíš, tak napiš že nevíš a NEVYMÝŠLEJ SI!`}
-          
           labels={{
             title: "Tesla Asistent",
             initial: "Ahoj! Jak vám mohu pomoci najít perfektní Tesla?",
-            placeholder: "Napište zprávu…"
           }}
-          
-          className="h-full"
         />
       </div>
     </div>
