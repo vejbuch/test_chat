@@ -8,16 +8,17 @@ import { useCopilotAction, useCopilotChat } from "@copilotkit/react-core";
 
 export function CarSalesChat() {
   const [userInput, setUserInput] = useState("");
-  const [chatHistory, setChatHistory] = useState([
+  const [chatHistory, setChatHistory] = useState<
+    { sender: "user" | "assistant"; message: string }[]
+  >([
     {
-      role: "assistant",
-      content: "Ahoj! Jak vám mohu pomoci najít perfektní Tesla?",
+      sender: "assistant",
+      message: "Ahoj! Jak vám mohu pomoci najít perfektní Tesla?",
     },
   ]);
 
   const { appendMessage } = useCopilotChat();
 
-  // Akce pro vyhledávání
   useCopilotAction({
     name: "searchCars",
     description: "Vyhledá Tesla auta podle zadaných kritérií",
@@ -35,34 +36,40 @@ export function CarSalesChat() {
   });
 
   const handleSend = async () => {
-  if (!userInput.trim()) return;
+    if (!userInput.trim()) return;
 
-  const newUserMessage = { role: "user", content: userInput };
-  setChatHistory(prev => [...prev, newUserMessage]);
+    const currentInput = userInput;
+    setUserInput("");
 
-  const currentInput = userInput;
-  setUserInput("");
+    // Lokální zobrazení zprávy uživatele
+    setChatHistory((prev) => [
+      ...prev,
+      { sender: "user", message: currentInput },
+    ]);
 
-try {
-  const response = await appendMessage({ content: currentInput });
+    try {
+      // Zpráva se odešle jako string
+      const response = await appendMessage(currentInput);
 
-  setChatHistory(prev => [
-    ...prev,
-    {
-      role: "assistant",
-      content: response || "Promiňte, něco se pokazilo.",
-    },
-  ]);
-} catch (error) {
-  setChatHistory(prev => [
-    ...prev,
-    {
-      role: "assistant",
-      content: "Promiňte, momentálně nemohu odpovědět. Zkuste to prosím znovu.",
-    },
-  ]);
-}
-};
+      // Přidáme odpověď asistenta
+      setChatHistory((prev) => [
+        ...prev,
+        {
+          sender: "assistant",
+          message: response || "Promiňte, něco se pokazilo.",
+        },
+      ]);
+    } catch (error) {
+      setChatHistory((prev) => [
+        ...prev,
+        {
+          sender: "assistant",
+          message:
+            "Promiňte, momentálně nemohu odpovědět. Zkuste to prosím znovu.",
+        },
+      ]);
+    }
+  };
 
   return (
     <div className="max-w-2xl mx-auto p-4 h-screen flex flex-col">
@@ -73,12 +80,12 @@ try {
             <div
               key={idx}
               className={`max-w-[75%] p-3 rounded-xl text-sm ${
-                msg.role === "assistant"
+                msg.sender === "assistant"
                   ? "bg-gray-100 text-left self-start"
                   : "bg-blue-100 text-right self-end ml-auto"
               }`}
             >
-              {msg.content}
+              {msg.message}
             </div>
           ))}
         </CardContent>
@@ -89,17 +96,17 @@ try {
           onChange={(e) => setUserInput(e.target.value)}
           placeholder="Napište zprávu…"
           className="flex-1"
-          onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+          onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />
         <Button onClick={handleSend}>Odeslat</Button>
       </div>
-      
-      {/* CopilotChat pro backend komunikaci */}
+
+      {/* Skrytý CopilotChat kvůli contextu */}
       <div className="hidden">
         <CopilotChat
           instructions={`Jste asistent na stránce kde lidi inzerují ojeté Tesly. Pomáháte lidem najít správné auto podle jejich požadavků. 
 DŮLEŽITÉ: Když uživatel hledá auto, VŽDY použijte funkci "searchCars" s parametrem "searchTerm".
-UPOZRNĚNÍ: Nedomlouvej žádné schůzky a drž se pouze toho, že jsi asistent vyhledávání aut na Teslist.cz, kde jsou inzeráty lidí na ojeté Tesly.
+UPOZORNĚNÍ: Nedomlouvej žádné schůzky a drž se pouze toho, že jsi asistent vyhledávání aut na Teslist.cz, kde jsou inzeráty lidí na ojeté Tesly.
 ZÁKAZY: Neřeš nic jiného než je zde popsáno, pokud nevíš, tak napiš že nevíš a NEVYMÝŠLEJ SI!`}
           labels={{
             title: "Tesla Asistent",
