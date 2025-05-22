@@ -6,11 +6,11 @@ import {
 import { NextRequest } from "next/server";
 import { supabase } from "../../../lib/supabase";
 
-// 1. Vytvoř runtime (bez parametrů!)
+// 1. Vytvoř runtime
 const runtime = new CopilotRuntime();
 
-// 2. Definuj akce
-runtime.defineActions([
+// 2. Definuj akce přímo při inicializaci runtime
+runtime.actions = [
   {
     name: "searchCars",
     description: "Najde auta podle dotazu uživatele",
@@ -39,12 +39,12 @@ runtime.defineActions([
       }));
     },
   },
-]);
+];
 
 // 3. Vytvoř adaptér pro OpenAI
 const adapter = new OpenAIAdapter({
   apiKey: process.env.OPENAI_API_KEY!,
-  model: "gpt-4", // nebo "gpt-3.5-turbo"
+  model: "gpt-4",
 });
 
 // 4. Vrať správný handler
