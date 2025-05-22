@@ -6,19 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useCopilotAction, useCopilotChat } from "@copilotkit/react-core";
+import { Role, type TextMessage } from "@copilotkit/runtime-client-gql";
 
 export function CarSalesChat() {
   const [userInput, setUserInput] = useState("");
-  const [chatHistory, setChatHistory] = useState<
-    { sender: "user" | "assistant"; message: string }[]
-  >([
-    {
-      sender: "assistant",
-      message: "Ahoj! Jak vám mohu pomoci najít perfektní Tesla?",
-    },
-  ]);
-
-  const { appendMessage } = useCopilotChat();
+  const { messages, appendMessage, isLoading } = useCopilotChat();
 
   useCopilotAction({
     name: "searchCars",
@@ -38,34 +30,16 @@ export function CarSalesChat() {
 
   const handleSend = async () => {
     if (!userInput.trim()) return;
-
-    const currentInput = userInput.trim();
+    const text = userInput.trim();
     setUserInput("");
 
-    setChatHistory((prev) => [
-      ...prev,
-      { sender: "user", message: currentInput },
-    ]);
+    const userMsg: TextMessage = {
+      type: "text",
+      content: text,
+      role: Role.User,
+    };
 
-    try {
-      const response = await appendMessage(currentInput);
-
-      setChatHistory((prev) => [
-        ...prev,
-        {
-          sender: "assistant",
-          message: response || "Promiňte, něco se pokazilo.",
-        },
-      ]);
-    } catch (err) {
-      setChatHistory((prev) => [
-        ...prev,
-        {
-          sender: "assistant",
-          message: "Došlo k chybě. Zkuste to prosím znovu.",
-        },
-      ]);
-    }
+    await appendMessage(userMsg);
   };
 
   return (
@@ -74,18 +48,20 @@ export function CarSalesChat() {
 
       <Card className="flex-1 overflow-y-auto space-y-2 p-4 bg-gray-50">
         <CardContent className="space-y-4">
-          {chatHistory.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`max-w-[75%] p-3 rounded-xl text-sm ${
-                msg.sender === "assistant"
-                  ? "bg-gray-100 text-left self-start"
-                  : "bg-blue-100 text-right self-end ml-auto"
-              }`}
-            >
-              {msg.message}
-            </div>
-          ))}
+          {messages
+            .filter((msg) => msg.type === "text")
+            .map((msg, idx) => (
+              <div
+                key={msg.id ?? idx}
+                className={`max-w-[75%] p-3 rounded-xl text-sm ${
+                  msg.role === Role.Assistant
+                    ? "bg-gray-100 text-left self-start"
+                    : "bg-blue-100 text-right self-end ml-auto"
+                }`}
+              >
+                {msg.content}
+              </div>
+            ))}
         </CardContent>
       </Card>
 
@@ -96,11 +72,13 @@ export function CarSalesChat() {
           placeholder="Napište zprávu…"
           className="flex-1"
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          disabled={isLoading}
         />
-        <Button onClick={handleSend}>Odeslat</Button>
+        <Button onClick={handleSend} disabled={isLoading}>
+          {isLoading ? "..." : "Odeslat"}
+        </Button>
       </div>
 
-      {/* Skrytý kontext pro CopilotKit */}
       <div className="hidden">
         <CopilotChat
           instructions={`Jste asistent na stránce kde lidi inzerují ojeté Tesly. Pomáháte lidem najít správné auto podle jejich požadavků.
