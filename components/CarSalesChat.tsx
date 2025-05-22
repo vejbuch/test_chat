@@ -46,15 +46,12 @@ export function CarSalesChat() {
     
     try {
       // Pošleme zprávu do CopilotKit
-      const response = await appendMessage({
-        content: currentInput,
-        role: "user"
-      });
+      const response = await appendMessage(currentInput);
       
       // Přidáme odpověď asistenta
       setChatHistory(prev => [...prev, {
         role: "assistant",
-        content: response.content || "Promiňte, něco se pokazilo."
+        content: response || "Promiňte, něco se pokazilo."
       }]);
     } catch (error) {
       setChatHistory(prev => [...prev, {
