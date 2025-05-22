@@ -7,6 +7,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@copilotkit/runtime": "1.8.11",
     "@supabase/supabase-js": "^2.42.2",
     "@copilotkit/react-core": "1.8.13",
     "@copilotkit/react-ui": "1.8.13",
