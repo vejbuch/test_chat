@@ -18,11 +18,22 @@
     "tailwind-merge": "^1.13.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "next": "15.2.0-canary.76"
+    "next": "15.2.0-canary.76",
+    "@copilotkit/runtime-client-gql": "1.8.13",
+    "clsx": "^1.2.1",
+    "motion": "^11.18.1",
+    "next": "14.2.1",
+    "reactflow": "^11.11.4"
   },
   "devDependencies": {
-    "typescript": "^5.3.3",
-    "@types/react": "^18.2.40",
-    "@types/node": "^20.11.30"
+    "@eslint/eslintrc": "^3",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.1",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
   }
 }
