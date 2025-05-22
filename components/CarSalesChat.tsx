@@ -1,10 +1,10 @@
 "use client";
 
 import { CopilotChat } from "@copilotkit/react-ui";
-import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 export function CarSalesChat() {
   const [userInput, setUserInput] = useState("");
@@ -22,7 +22,7 @@ export function CarSalesChat() {
       { role: "user", content: userInput },
       {
         role: "assistant",
-        content: (${userInput}) → Tady by přišla odpověď od Copilota...,
+        content: `(${userInput}) → Odpověď od Copilot chatu...`, // Dummy response – tady můžeš volat searchCars nebo čekat na Copilot
       },
     ];
     setChatHistory(newMessages);
@@ -38,11 +38,11 @@ export function CarSalesChat() {
           {chatHistory.map((msg, idx) => (
             <div
               key={idx}
-              className={max-w-[75%] p-3 rounded-xl text-sm ${
+              className={`max-w-[75%] p-3 rounded-xl text-sm ${
                 msg.role === "assistant"
                   ? "bg-gray-100 text-left self-start"
                   : "bg-blue-100 text-right self-end ml-auto"
-              }}
+              }`}
             >
               {msg.content}
             </div>
@@ -60,10 +60,10 @@ export function CarSalesChat() {
         <Button onClick={handleSend}>Odeslat</Button>
       </div>
 
-      {/* Neviditelný CopilotChat pro funkčnost */}
+      {/* Hidden CopilotChat to handle instructions and integrations */}
       <div className="hidden">
         <CopilotChat
-          instructions={Jste asistent na stránce kde lidi inzerují ojeté Tesly. Pomáháte lidem najít správné auto podle jejich požadavků.
+          instructions={`Jste asistent na stránce kde lidi inzerují ojeté Tesly. Pomáháte lidem najít správné auto podle jejich požadavků. 
 
 DŮLEŽITÉ: Když uživatel hledá auto, VŽDY použijte funkci "searchCars" s parametrem "searchTerm".
 
@@ -76,7 +76,7 @@ Příklady použití:
 - Pokud uživatel řekne "chci červenou Tesla" → zavolejte searchCars s searchTerm: "červená"
 - Pokud uživatel řekne "Model S Long Range" → zavolejte searchCars s searchTerm: "Model S Long Range"
 
-Vždy zavolejte tuto funkci při jakémkoliv dotazu na konkrétní auta.}
+Vždy zavolejte tuto funkci při jakémkoliv dotazu na konkrétní auta.`}
           labels={{
             title: "Tesla Asistent",
             initial: "Ahoj! Jak vám mohu pomoci najít perfektní Tesla?",
