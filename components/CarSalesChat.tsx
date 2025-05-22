@@ -5,15 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useCopilotAction, useCopilotChat } from "@copilotkit/react-core";
+import type { CopilotKitMessage } from "@copilotkit/react-core";
 
 export function CarSalesChat() {
   const [userInput, setUserInput] = useState("");
   const [chatHistory, setChatHistory] = useState<
-    { sender: "user" | "assistant"; message: string }[]
+    { role: "user" | "assistant"; content: string }[]
   >([
     {
-      sender: "assistant",
-      message: "Ahoj! Jak vám mohu pomoci najít perfektní Tesla?",
+      role: "assistant",
+      content: "Ahoj! Jak vám mohu pomoci najít perfektní Tesla?",
     },
   ]);
 
@@ -41,30 +42,33 @@ export function CarSalesChat() {
     const currentInput = userInput;
     setUserInput("");
 
-    // Lokální zobrazení zprávy uživatele
     setChatHistory((prev) => [
       ...prev,
-      { sender: "user", message: currentInput },
+      { role: "user", content: currentInput },
     ]);
 
     try {
-      // Zpráva se odešle jako string
-      const response = await appendMessage(currentInput);
+      // OPRAVA – vytvoření objektu odpovídajícího typu
+      const userMessage: CopilotKitMessage = {
+        role: "user",
+        content: currentInput,
+      };
 
-      // Přidáme odpověď asistenta
+      const response = await appendMessage(userMessage);
+
       setChatHistory((prev) => [
         ...prev,
         {
-          sender: "assistant",
-          message: response || "Promiňte, něco se pokazilo.",
+          role: "assistant",
+          content: response || "Promiňte, něco se pokazilo.",
         },
       ]);
     } catch (error) {
       setChatHistory((prev) => [
         ...prev,
         {
-          sender: "assistant",
-          message:
+          role: "assistant",
+          content:
             "Promiňte, momentálně nemohu odpovědět. Zkuste to prosím znovu.",
         },
       ]);
@@ -80,12 +84,12 @@ export function CarSalesChat() {
             <div
               key={idx}
               className={`max-w-[75%] p-3 rounded-xl text-sm ${
-                msg.sender === "assistant"
+                msg.role === "assistant"
                   ? "bg-gray-100 text-left self-start"
                   : "bg-blue-100 text-right self-end ml-auto"
               }`}
             >
-              {msg.message}
+              {msg.content}
             </div>
           ))}
         </CardContent>
@@ -101,7 +105,6 @@ export function CarSalesChat() {
         <Button onClick={handleSend}>Odeslat</Button>
       </div>
 
-      {/* Skrytý CopilotChat kvůli contextu */}
       <div className="hidden">
         <CopilotChat
           instructions={`Jste asistent na stránce kde lidi inzerují ojeté Tesly. Pomáháte lidem najít správné auto podle jejich požadavků. 
