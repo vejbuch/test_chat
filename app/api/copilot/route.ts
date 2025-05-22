@@ -1,14 +1,28 @@
-import { CopilotRuntime, OpenAIAdapter } from "@copilotkit/runtime";
-import { supabase } from "../../../lib/supabase";
+import {
+  CopilotRuntime,
+  OpenAIAdapter,
+  copilotRuntimeNextJSAppRouterEndpoint,
+} from "@copilotkit/runtime";
 import { NextRequest } from "next/server";
+import { supabase } from "../../../lib/supabase";
 
-const copilotKit = new CopilotRuntime();
+// 1. Vytvoř runtime
+const runtime = new CopilotRuntime();
 
-copilotKit.action(
-  "searchCars",
-  "Najde auta podle dotazu uživatele",
-  async ({ input }: { input: string }) => {
+// 2. Zaregistruj tvoji akci
+runtime.registerAction({
+  name: "searchCars",
+  description: "Najde auta podle dotazu uživatele",
+  parameters: [
+    {
+      name: "input",
+      type: "string",
+      description: "Např. Model 3, červená, Long Range",
+    },
+  ],
+  handler: async ({ input }: { input: string }) => {
     const query = input.toLowerCase();
+
     const { data, error } = await supabase
       .from("inzeraty_s_fotkou")
       .select("*")
@@ -22,14 +36,22 @@ copilotKit.action(
       subtitle: `VIN: ${car.vin}`,
       imageUrl: car.photo_url || "",
     }));
-  }
-);
-
-const adapter = new OpenAIAdapter({
-  apiKey: process.env.OPENAI_API_KEY!,
-  model: "gpt-4", // nebo "gpt-3.5-turbo"
+  },
 });
 
-export async function POST(req: NextRequest) {
-  return copilotKit.streamHttpServerResponse(req, adapter);
-}
+// 3. Nastav OpenAI adapter
+const serviceAdapter = new OpenAIAdapter({
+  apiKey: process.env.OPENAI_API_KEY!,
+  model: "gpt-4",
+});
+
+// 4. Vytvoř handler
+export const POST = async (req: NextRequest) => {
+  const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
+    runtime,
+    serviceAdapter,
+    endpoint: "/api/copilot",
+  });
+
+  return handleRequest(req);
+};
