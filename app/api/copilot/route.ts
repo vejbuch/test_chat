@@ -26,8 +26,11 @@ runtime.actions = [
     name: "searchCars",
     description: "Najde auta podle dotazu uživatele",
     parameters: [] as any,
-    handler: async ({ input }: { input: string }) => {
-      const query = input.toLowerCase();
+    handler: async (args: any) => {
+      // Přijímáme jakékoliv argumenty a extrahujeme input
+      const input = args?.input || args || "";
+      const query = input.toString().toLowerCase();
+      
       const { data, error } = await supabase
         .from("inzeraty_s_fotkou")
         .select("*")
@@ -42,7 +45,7 @@ runtime.actions = [
         imageUrl: car.photo_url || "",
       }));
     },
-  },
+  } as any,
 ];
 
 // 5. Vrať správný handler
