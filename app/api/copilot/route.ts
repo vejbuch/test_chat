@@ -8,80 +8,81 @@ import { supabase } from "../../../lib/supabase";
 
 // @ts-nocheck
 
-// 1. Vytvoř adaptér pro OpenAI
-const adapter = new OpenAIAdapter();
-
-// 2. Vytvoř runtime
 const runtime = new CopilotRuntime();
+const serviceAdapter = new OpenAIAdapter();
 
-// 3. Definuj akce
-runtime.actions = [
-  {
-    name: "searchCars",
-    description: "Najde auta podle dotazu uživatele",
-    parameters: [],
-    handler: async (args: any) => {
-      try {
-        console.log("Searching for cars with args:", args);
-        
-        // Extrahuj query z argumentů různými způsoby
-        const query = args?.query || args?.input || args || "";
-        const searchQuery = String(query).toLowerCase().trim();
-        
-        if (!searchQuery) {
-          return { message: "Zadejte prosím vyhledávací dotaz pro auta" };
-        }
-        
-        const { data, error } = await supabase
-          .from("inzeraty_s_fotkou")
-          .select("*")
-          .ilike("display_name", `%${searchQuery}%`)
-          .limit(5);
-        
-        if (error) {
-          console.error("Supabase error:", error);
-          throw error;
-        }
-        
-        console.log("Found cars:", data?.length);
-        
-        if (!data || data.length === 0) {
-          return { 
-            message: `Nenašel jsem žádná auta pro dotaz "${query}". Zkuste jiný vyhledávací termín.`,
-            cars: []
-          };
-        }
-        
-        return {
-          message: `Našel jsem ${data.length} aut pro dotaz "${searchQuery}":`,
-          cars: data.map((car) => ({
-            title: car.verze,
-            subtitle: `VIN: ${car.vin}`,
-            imageUrl: car.first_photo_url || "",
-            price: car.cena || "Cena na dotaz",
-            year: car.year || "",
-            mileage: car.mileage || ""
-          }))
-        };
-        
-      } catch (error) {
-        console.error("Error in searchCars handler:", error);
-        return { 
-          message: "Nastala chyba při hledání aut. Zkuste to prosím znovu.",
-          error: error.message 
-        };
+// Definuj akci pomocí registerAction
+runtime.registerAction({
+  name: "searchCars",
+  description: "Najde Tesla auta podle uživatelova dotazu. Zavolej tuto funkci když uživatel hledá konkrétní auto.",
+  parameters: {
+    type: "object",
+    properties: {
+      searchTerm: {
+        type: "string",
+        description: "Vyhledávací termín (např. 'Model 3', 'červená Tesla', 'Long Range')"
       }
     },
-  } as any,
-];
+    required: ["searchTerm"]
+  },
+  handler: async ({ searchTerm }) => {
+    try {
+      console.log("Backend searching for:", searchTerm, typeof searchTerm);
+      
+      // Zajisti, že searchTerm je string
+      let queryString = "";
+      if (typeof searchTerm === 'string') {
+        queryString = searchTerm;
+      } else if (searchTerm && typeof searchTerm === 'object') {
+        queryString = JSON.stringify(searchTerm);
+      } else {
+        queryString = String(searchTerm || "");
+      }
+      
+      queryString = queryString.toLowerCase().trim();
+      
+      if (!queryString || queryString === '{}' || queryString === 'null' || queryString === 'undefined') {
+        return "Prosím zadejte konkrétní vyhledávací termín pro Tesla auta.";
+      }
+      
+      console.log("Final query string:", queryString);
+      
+      const { data, error } = await supabase
+        .from("inzeraty_s_fotkou")
+        .select("*")
+        .ilike("verze", `%${queryString}%`)
+        .limit(5);
+      
+      if (error) {
+        console.error("Supabase error:", error);
+        return `Chyba při hledání aut: ${error.message}`;
+      }
+      
+      console.log("Supabase returned:", data?.length, "cars");
+      
+      if (!data || data.length === 0) {
+        return `Nenašel jsem žádná Tesla auta pro "${queryString}". Zkuste jiný termín jako "Model 3", "Model S", nebo "červená".`;
+      }
+      
+      const results = data.map((car, index) => 
+        `${index + 1}. ${car.verze} - ${car.cena || 'Cena na dotaz'} - VIN: ${car.vin}`
+      ).join('\n');
+      
+      return `Našel jsem ${data.length} Tesla aut pro "${queryString}":\n\n${results}`;
+      
+    } catch (error) {
+      console.error("Handler error:", error);
+      return `Nastala chyba při hledání aut: ${error.message}`;
+    }
+  }
+});
 
-// 4. Vrať správný handler
-export async function POST(req: NextRequest) {
+export const POST = async (req: NextRequest) => {
   const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
     runtime,
-    serviceAdapter: adapter,
+    serviceAdapter,
     endpoint: "/api/copilot",
   });
   
   return handleRequest(req);
-}
+};
