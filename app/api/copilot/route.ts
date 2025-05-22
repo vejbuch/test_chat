@@ -55,12 +55,12 @@ runtime.actions = [
         return {
           message: `Našel jsem ${data.length} aut pro dotaz "${searchQuery}":`,
           cars: data.map((car) => ({
-            title: car.display_name,
+            title: car.verze,
             subtitle: `VIN: ${car.vin}`,
-            imageUrl: car.photo_url || "",
-            price: car.price || "Cena na dotaz",
+            imageUrl: car.first_photo_url || "",
+            price: car.cena || "Cena na dotaz",
             year: car.year || "",
-            mileage: car.mileage || ""
+            mileage: car.odometer || ""
           }))
         };
         
