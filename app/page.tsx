@@ -3,7 +3,7 @@ import { CarSalesChat } from "../components/CarSalesChat";
 
 export default function Home() {
   return (
-    <CopilotKit url="/api/copilot">
+    <CopilotKit runtimeUrl="/api/copilot">
       <main className="flex h-screen">
         <div className="w-2/3 p-6">
           <h1 className="text-2xl font-bold">Vítejte na Teslist.cz</h1>
