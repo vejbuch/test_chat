@@ -6,14 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useCopilotAction, useCopilotChat } from "@copilotkit/react-core";
-import { Role, TextMessage } from "@copilotkit/runtime-client-gql";
+import { Role, type TextMessage } from "@copilotkit/runtime-client-gql";
 
 export function CarSalesChat() {
   const [userInput, setUserInput] = useState("");
-  // Všechny zprávy (včetně té úvodní) teď přicházejí z hooku:
   const { messages, appendMessage, isLoading } = useCopilotChat();
 
-  // Registrace “funkce” pro vyhledání aut
+  // Definice funkce pro vyhledání aut
   useCopilotAction({
     name: "searchCars",
     description: "Vyhledá Tesla auta podle zadaných kritérií",
@@ -35,13 +34,13 @@ export function CarSalesChat() {
     const text = userInput.trim();
     setUserInput("");
 
-    // Vytvoříme správný TextMessage, který appendMessage akceptuje
-    const userMsg = new TextMessage({
+    // Vytvoření objektu typu TextMessage (NE new!)
+    const userMsg: TextMessage = {
+      type: "text",
       content: text,
       role: Role.User,
-    });
+    };
 
-    // Odešleme zprávu – hook sám přidá uživatelskou i asistentovu odpověď do `messages`
     await appendMessage(userMsg);
   };
 
@@ -51,10 +50,6 @@ export function CarSalesChat() {
 
       <Card className="flex-1 overflow-y-auto space-y-2 p-4 bg-gray-50">
         <CardContent className="space-y-4">
-          {/*
-            Vykreslíme všechny textové zprávy,
-            role zjistíme přes msg.role (Role.Assistant | Role.User)
-          */}
           {messages
             .filter((msg) => msg.type === "text")
             .map((msg, idx) => (
@@ -86,20 +81,14 @@ export function CarSalesChat() {
         </Button>
       </div>
 
-      {/* 
-        Skrytý CopilotChat provider + instrukce, 
-        aby engine věděl, jak má odpovídat a volat `searchCars`
-      */}
+      {/* Skrytý CopilotChat pro context */}
       <div className="hidden">
         <CopilotChat
-          instructions={`
-Jste asistent na stránce kde lidi inzerují ojeté Tesly. Pomáháte lidem najít
-správné auto podle jejich požadavků.
+          instructions={`Jste asistent na stránce kde lidi inzerují ojeté Tesly. Pomáháte lidem najít správné auto podle jejich požadavků.
 
 DŮLEŽITÉ: Když uživatel hledá auto, VŽDY použijte funkci "searchCars" s parametrem "searchTerm".
 UPOZORNĚNÍ: Nedomlouvej žádné schůzky a drž se pouze toho, že jsi asistent vyhledávání aut na Teslist.cz.
-ZÁKAZY: Neřeš nic jiného než je zde popsáno, pokud nevíš, tak napiš že nevíš a NEVYMÝŠLEJ SI!
-          `}
+ZÁKAZY: Neřeš nic jiného než je zde popsáno, pokud nevíš, tak napiš že nevíš a NEVYMÝŠLEJ SI!`}
           labels={{
             title: "Tesla Asistent",
             initial: "Ahoj! Jak vám mohu pomoci najít perfektní Tesla?",
