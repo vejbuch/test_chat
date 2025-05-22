@@ -43,25 +43,25 @@ export function CarSalesChat() {
   const currentInput = userInput;
   setUserInput("");
 
-  try {
-    const response = await appendMessage({ role: "user", content: currentInput });
+try {
+  const response = await appendMessage({ content: currentInput });
 
-    setChatHistory(prev => [
-      ...prev,
-      {
-        role: "assistant",
-        content: response || "Promiňte, něco se pokazilo.",
-      },
-    ]);
-  } catch (error) {
-    setChatHistory(prev => [
-      ...prev,
-      {
-        role: "assistant",
-        content: "Promiňte, momentálně nemohu odpovědět. Zkuste to prosím znovu.",
-      },
-    ]);
-  }
+  setChatHistory(prev => [
+    ...prev,
+    {
+      role: "assistant",
+      content: response || "Promiňte, něco se pokazilo.",
+    },
+  ]);
+} catch (error) {
+  setChatHistory(prev => [
+    ...prev,
+    {
+      role: "assistant",
+      content: "Promiňte, momentálně nemohu odpovědět. Zkuste to prosím znovu.",
+    },
+  ]);
+}
 };
 
   return (
