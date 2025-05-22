@@ -6,25 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useCopilotAction, useCopilotChat } from "@copilotkit/react-core";
-// === Přidáno: správné typy z runtime-client-gql ===
 import { Role, TextMessage } from "@copilotkit/runtime-client-gql";
-
-type ChatHistoryMessage = {
-  role: "user" | "assistant";
-  content: string;
-};
 
 export function CarSalesChat() {
   const [userInput, setUserInput] = useState("");
-  const [chatHistory, setChatHistory] = useState<ChatHistoryMessage[]>([
-    {
-      role: "assistant",
-      content: "Ahoj! Jak vám mohu pomoci najít perfektní Tesla?",
-    },
-  ]);
+  // Všechny zprávy (včetně té úvodní) teď přicházejí z hooku:
+  const { messages, appendMessage, isLoading } = useCopilotChat();
 
-  const { appendMessage } = useCopilotChat();
-
+  // Registrace “funkce” pro vyhledání aut
   useCopilotAction({
     name: "searchCars",
     description: "Vyhledá Tesla auta podle zadaných kritérií",
@@ -37,46 +26,23 @@ export function CarSalesChat() {
       },
     ],
     handler: async ({ searchTerm }) => {
-      // Zde byste ideálně volali API pro vyhledání aut.
       return `Vyhledávám Tesla vozidla pro: "${searchTerm}"`;
     },
   });
 
   const handleSend = async () => {
     if (!userInput.trim()) return;
-
     const text = userInput.trim();
     setUserInput("");
 
-    // Přidáme zprávu uživatele do lokálního stavu
-    setChatHistory((prev) => [
-      ...prev,
-      { role: "user", content: text },
-    ]);
+    // Vytvoříme správný TextMessage, který appendMessage akceptuje
+    const userMsg = new TextMessage({
+      content: text,
+      role: Role.User,
+    });
 
-    try {
-      // Vytvoříme instanci TextMessage kompatibilní s CopilotKit
-      const userMsg = new TextMessage({
-        content: text,
-        role: Role.User,
-      });
-      // Odešleme zprávu a počkáme na odpověď asistenta
-      const assistantMsg = await appendMessage(userMsg);
-
-      setChatHistory((prev) => [
-        ...prev,
-        { role: "assistant", content: assistantMsg.content },
-      ]);
-    } catch (error) {
-      setChatHistory((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content:
-            "Promiňte, momentálně nemohu odpovědět. Zkuste to prosím znovu.",
-        },
-      ]);
-    }
+    // Odešleme zprávu – hook sám přidá uživatelskou i asistentovu odpověď do `messages`
+    await appendMessage(userMsg);
   };
 
   return (
@@ -85,18 +51,24 @@ export function CarSalesChat() {
 
       <Card className="flex-1 overflow-y-auto space-y-2 p-4 bg-gray-50">
         <CardContent className="space-y-4">
-          {chatHistory.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`max-w-[75%] p-3 rounded-xl text-sm ${
-                msg.role === "assistant"
-                  ? "bg-gray-100 text-left self-start"
-                  : "bg-blue-100 text-right self-end ml-auto"
-              }`}
-            >
-              {msg.content}
-            </div>
-          ))}
+          {/*
+            Vykreslíme všechny textové zprávy,
+            role zjistíme přes msg.role (Role.Assistant | Role.User)
+          */}
+          {messages
+            .filter((msg) => msg.type === "text")
+            .map((msg, idx) => (
+              <div
+                key={msg.id ?? idx}
+                className={`max-w-[75%] p-3 rounded-xl text-sm ${
+                  msg.role === Role.Assistant
+                    ? "bg-gray-100 text-left self-start"
+                    : "bg-blue-100 text-right self-end ml-auto"
+                }`}
+              >
+                {msg.content}
+              </div>
+            ))}
         </CardContent>
       </Card>
 
@@ -107,11 +79,17 @@ export function CarSalesChat() {
           placeholder="Napište zprávu…"
           className="flex-1"
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          disabled={isLoading}
         />
-        <Button onClick={handleSend}>Odeslat</Button>
+        <Button onClick={handleSend} disabled={isLoading}>
+          {isLoading ? "..." : "Odeslat"}
+        </Button>
       </div>
 
-      {/* Skrytá komponenta CopilotChat pro zajištění běhu enginu */}
+      {/* 
+        Skrytý CopilotChat provider + instrukce, 
+        aby engine věděl, jak má odpovídat a volat `searchCars`
+      */}
       <div className="hidden">
         <CopilotChat
           instructions={`
