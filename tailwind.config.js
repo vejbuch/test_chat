@@ -8,14 +8,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        muted: "#f5f5f5", // nebo jakoukoliv světlou barvu
+        muted: "#f5f5f5"
       },
       height: {
-        '90vh': '90vh',
-      },
+        "90vh": "90vh"
+      }
     },
   },
-  plugins: [
-    require("tailwindcss-animate"),
-  ],
+  plugins: [require("tailwindcss-animate")],
 };
