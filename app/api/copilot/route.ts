@@ -19,25 +19,17 @@ runtime.actions = [
   {
     name: "searchCars",
     description: "Najde auta podle dotazu uživatele",
-    parameters: {
-      type: "object",
-      properties: {
-        query: {
-          type: "string",
-          description: "Vyhledávací dotaz pro auta (např. 'Model 3', 'červená', 'Long Range')"
-        }
-      },
-      required: ["query"]
-    },
-    handler: async ({ query }: { query: string }) => {
+    parameters: [],
+    handler: async (args: any) => {
       try {
-        console.log("Searching for cars with query:", query);
+        console.log("Searching for cars with args:", args);
         
-        // Ujistíme se, že query je string
-        const searchQuery = String(query || "").toLowerCase().trim();
+        // Extrahuj query z argumentů různými způsoby
+        const query = args?.query || args?.input || args || "";
+        const searchQuery = String(query).toLowerCase().trim();
         
         if (!searchQuery) {
-          return { message: "Zadejte prosím vyhledávací dotaz" };
+          return { message: "Zadejte prosím vyhledávací dotaz pro auta" };
         }
         
         const { data, error } = await supabase
@@ -61,7 +53,7 @@ runtime.actions = [
         }
         
         return {
-          message: `Našel jsem ${data.length} aut pro dotaz "${query}":`,
+          message: `Našel jsem ${data.length} aut pro dotaz "${searchQuery}":`,
           cars: data.map((car) => ({
             title: car.display_name,
             subtitle: `VIN: ${car.vin}`,
