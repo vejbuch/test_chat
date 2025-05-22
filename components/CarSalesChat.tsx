@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { useCopilotAction, useCopilotReadable } from "@copilotkit/react-core";
+import { useCopilotAction, useCopilotChat } from "@copilotkit/react-core";
 
 export function CarSalesChat() {
   const [userInput, setUserInput] = useState("");
@@ -15,11 +15,7 @@ export function CarSalesChat() {
     },
   ]);
 
-  // Propojení s CopilotKit - sdílení chat historie
-  useCopilotReadable({
-    description: "Aktuální chat historie",
-    value: chatHistory,
-  });
+  const { appendMessage } = useCopilotChat();
 
   // Akce pro vyhledávání
   useCopilotAction({
@@ -38,22 +34,34 @@ export function CarSalesChat() {
     },
   });
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!userInput.trim()) return;
     
+    // Přidáme uživatelskou zprávu
     const newUserMessage = { role: "user", content: userInput };
-    const updatedHistory = [...chatHistory, newUserMessage];
-    setChatHistory(updatedHistory);
+    setChatHistory(prev => [...prev, newUserMessage]);
+    
+    const currentInput = userInput;
     setUserInput("");
     
-    // Simulace odpovědi (CopilotKit převezme kontrolu)
-    setTimeout(() => {
-      const assistantMessage = {
+    try {
+      // Pošleme zprávu do CopilotKit
+      const response = await appendMessage({
+        content: currentInput,
+        role: "user"
+      });
+      
+      // Přidáme odpověď asistenta
+      setChatHistory(prev => [...prev, {
+        role: "assistant",
+        content: response.content || "Promiňte, něco se pokazilo."
+      }]);
+    } catch (error) {
+      setChatHistory(prev => [...prev, {
         role: "assistant", 
-        content: `Odpověď na: "${userInput}" - (CopilotKit zpracovává...)`
-      };
-      setChatHistory([...updatedHistory, assistantMessage]);
-    }, 500);
+        content: "Promiňte, momentálně nemohu odpovědět. Zkuste to prosím znovu."
+      }]);
+    }
   };
 
   return (
