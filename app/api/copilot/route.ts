@@ -3,52 +3,87 @@ import {
   OpenAIAdapter,
   copilotRuntimeNextJSAppRouterEndpoint,
 } from "@copilotkit/runtime";
-import OpenAI from "openai";
 import { NextRequest } from "next/server";
 import { supabase } from "../../../lib/supabase";
 
-// 1. Vytvoř OpenAI instanci
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
+// @ts-nocheck
 
-// 2. Vytvoř adaptér s OpenAI instancí
-const adapter = new OpenAIAdapter({
-  openai,
-});
+// 1. Vytvoř adaptér pro OpenAI
+const adapter = new OpenAIAdapter();
 
-// 3. Vytvoř runtime
+// 2. Vytvoř runtime
 const runtime = new CopilotRuntime();
 
-// 4. Definuj akce
+// 3. Definuj akce
 runtime.actions = [
   {
     name: "searchCars",
     description: "Najde auta podle dotazu uživatele",
-    parameters: [] as any,
-    handler: async (args: any) => {
-      // Přijímáme jakékoliv argumenty a extrahujeme input
-      const input = args?.input || args || "";
-      const query = input.toString().toLowerCase();
-      
-      const { data, error } = await supabase
-        .from("inzeraty_s_fotkou")
-        .select("*")
-        .ilike("display_name", `%${query}%`)
-        .limit(5);
-      
-      if (error) throw error;
-      
-      return data.map((car) => ({
-        title: car.display_name,
-        subtitle: `VIN: ${car.vin}`,
-        imageUrl: car.photo_url || "",
-      }));
+    parameters: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "Vyhledávací dotaz pro auta (např. 'Model 3', 'červená', 'Long Range')"
+        }
+      },
+      required: ["query"]
+    },
+    handler: async ({ query }: { query: string }) => {
+      try {
+        console.log("Searching for cars with query:", query);
+        
+        // Ujistíme se, že query je string
+        const searchQuery = String(query || "").toLowerCase().trim();
+        
+        if (!searchQuery) {
+          return { message: "Zadejte prosím vyhledávací dotaz" };
+        }
+        
+        const { data, error } = await supabase
+          .from("inzeraty_s_fotkou")
+          .select("*")
+          .ilike("display_name", `%${searchQuery}%`)
+          .limit(5);
+        
+        if (error) {
+          console.error("Supabase error:", error);
+          throw error;
+        }
+        
+        console.log("Found cars:", data?.length);
+        
+        if (!data || data.length === 0) {
+          return { 
+            message: `Nenašel jsem žádná auta pro dotaz "${query}". Zkuste jiný vyhledávací termín.`,
+            cars: []
+          };
+        }
+        
+        return {
+          message: `Našel jsem ${data.length} aut pro dotaz "${query}":`,
+          cars: data.map((car) => ({
+            title: car.display_name,
+            subtitle: `VIN: ${car.vin}`,
+            imageUrl: car.photo_url || "",
+            price: car.price || "Cena na dotaz",
+            year: car.year || "",
+            mileage: car.mileage || ""
+          }))
+        };
+        
+      } catch (error) {
+        console.error("Error in searchCars handler:", error);
+        return { 
+          message: "Nastala chyba při hledání aut. Zkuste to prosím znovu.",
+          error: error.message 
+        };
+      }
     },
   } as any,
 ];
 
-// 5. Vrať správný handler
+// 4. Vrať správný handler
 export async function POST(req: NextRequest) {
   const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
     runtime,
