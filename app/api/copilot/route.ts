@@ -11,71 +11,77 @@ import { supabase } from "../../../lib/supabase";
 const runtime = new CopilotRuntime();
 const serviceAdapter = new OpenAIAdapter();
 
-// Definuj akci pomocí registerAction
-runtime.registerAction({
-  name: "searchCars",
-  description: "Najde Tesla auta podle uživatelova dotazu. Zavolej tuto funkci když uživatel hledá konkrétní auto.",
-  parameters: {
-    type: "object",
-    properties: {
-      searchTerm: {
-        type: "string",
-        description: "Vyhledávací termín (např. 'Model 3', 'červená Tesla', 'Long Range')"
+// Definuj akce pomocí runtime.actions
+runtime.actions = [
+  {
+    name: "searchCars",
+    description: "Najde Tesla auta podle uživatelova dotazu",
+    parameters: [],
+    handler: async (...args: any[]) => {
+      try {
+        console.log("=== HANDLER DEBUG ===");
+        console.log("Number of arguments:", args.length);
+        console.log("All arguments:", JSON.stringify(args, null, 2));
+        
+        // Zkus různé způsoby extrakce dat
+        let searchQuery = "";
+        
+        if (args.length > 0) {
+          const firstArg = args[0];
+          console.log("First arg type:", typeof firstArg);
+          console.log("First arg:", firstArg);
+          
+          if (typeof firstArg === 'string') {
+            searchQuery = firstArg;
+          } else if (firstArg && typeof firstArg === 'object') {
+            // Zkus různé property names
+            searchQuery = firstArg.query || firstArg.input || firstArg.searchTerm || firstArg.term || "";
+            console.log("Extracted from object:", searchQuery);
+          }
+        }
+        
+        // Fallback - zkus celý args jako string
+        if (!searchQuery) {
+          searchQuery = String(args[0] || "");
+        }
+        
+        searchQuery = searchQuery.toLowerCase().trim();
+        console.log("Final search query:", searchQuery);
+        
+        if (!searchQuery || searchQuery === '{}' || searchQuery === '[object object]') {
+          return "Prosím zadejte konkrétní vyhledávací termín pro Tesla auta.";
+        }
+        
+        const { data, error } = await supabase
+          .from("inzeraty_s_fotkou")
+          .select("*")
+          .ilike("verze", `%${searchQuery}%`)
+          .limit(5);
+        
+        if (error) {
+          console.error("Supabase error:", error);
+          return `Chyba při hledání aut: ${error.message}`;
+        }
+        
+        console.log("Supabase returned:", data?.length, "cars");
+        
+        if (!data || data.length === 0) {
+          return `Nenašel jsem žádná Tesla auta pro "${searchQuery}". Zkuste jiný termín.`;
+        }
+        
+        const results = data.map((car, index) => 
+          `${index + 1}. ${car.verze} - ${car.cena || 'Cena na dotaz'}`
+        ).join('\n');
+        
+        return `Našel jsem ${data.length} Tesla aut:\n\n${results}`;
+        
+      } catch (error) {
+        console.error("Handler error:", error);
+        return `Nastala chyba: ${error.message}`;
       }
-    },
-    required: ["searchTerm"]
-  },
-  handler: async ({ searchTerm }) => {
-    try {
-      console.log("Backend searching for:", searchTerm, typeof searchTerm);
-      
-      // Zajisti, že searchTerm je string
-      let queryString = "";
-      if (typeof searchTerm === 'string') {
-        queryString = searchTerm;
-      } else if (searchTerm && typeof searchTerm === 'object') {
-        queryString = JSON.stringify(searchTerm);
-      } else {
-        queryString = String(searchTerm || "");
-      }
-      
-      queryString = queryString.toLowerCase().trim();
-      
-      if (!queryString || queryString === '{}' || queryString === 'null' || queryString === 'undefined') {
-        return "Prosím zadejte konkrétní vyhledávací termín pro Tesla auta.";
-      }
-      
-      console.log("Final query string:", queryString);
-      
-      const { data, error } = await supabase
-        .from("inzeraty_s_fotkou")
-        .select("*")
-        .ilike("verze", `%${queryString}%`)
-        .limit(5);
-      
-      if (error) {
-        console.error("Supabase error:", error);
-        return `Chyba při hledání aut: ${error.message}`;
-      }
-      
-      console.log("Supabase returned:", data?.length, "cars");
-      
-      if (!data || data.length === 0) {
-        return `Nenašel jsem žádná Tesla auta pro "${queryString}". Zkuste jiný termín jako "Model 3", "Model S", nebo "červená".`;
-      }
-      
-      const results = data.map((car, index) => 
-        `${index + 1}. ${car.verze} - ${car.cena || 'Cena na dotaz'} - VIN: ${car.vin}`
-      ).join('\n');
-      
-      return `Našel jsem ${data.length} Tesla aut pro "${queryString}":\n\n${results}`;
-      
-    } catch (error) {
-      console.error("Handler error:", error);
-      return `Nastala chyba při hledání aut: ${error.message}`;
     }
-  }
-});
+  } as any
+];
 
 export const POST = async (req: NextRequest) => {
   const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
