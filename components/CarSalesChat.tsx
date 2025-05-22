@@ -1,10 +1,10 @@
 "use client";
 
 import { CopilotChat } from "@copilotkit/react-ui";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 
 export function CarSalesChat() {
   const [userInput, setUserInput] = useState("");
@@ -22,7 +22,7 @@ export function CarSalesChat() {
       { role: "user", content: userInput },
       {
         role: "assistant",
-        content: `(${userInput}) → Odpověď od Copilot chatu...`, // Dummy response – tady můžeš volat searchCars nebo čekat na Copilot
+        content: `(${userInput}) → Tady by přišla odpověď od Copilota...`,
       },
     ];
     setChatHistory(newMessages);
@@ -60,10 +60,10 @@ export function CarSalesChat() {
         <Button onClick={handleSend}>Odeslat</Button>
       </div>
 
-      {/* Hidden CopilotChat to handle instructions and integrations */}
+      {/* Neviditelný CopilotChat pro funkčnost */}
       <div className="hidden">
         <CopilotChat
-          instructions={`Jste asistent na stránce kde lidi inzerují ojeté Tesly. Pomáháte lidem najít správné auto podle jejich požadavků. 
+          instructions={`Jste asistent na stránce kde lidi inzerují ojeté Tesly. Pomáháte lidem najít správné auto podle jejich požadavků.
 
 DŮLEŽITÉ: Když uživatel hledá auto, VŽDY použijte funkci "searchCars" s parametrem "searchTerm".
 
