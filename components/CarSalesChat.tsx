@@ -1,20 +1,22 @@
 "use client";
+
 import { CopilotChat } from "@copilotkit/react-ui";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useCopilotAction, useCopilotChat } from "@copilotkit/react-core";
+// === Přidáno: správné typy z runtime-client-gql ===
+import { Role, TextMessage } from "@copilotkit/runtime-client-gql";
 
-// VLASTNÍ definice správného tvaru
-type Message = {
+type ChatHistoryMessage = {
   role: "user" | "assistant";
   content: string;
 };
 
 export function CarSalesChat() {
   const [userInput, setUserInput] = useState("");
-  const [chatHistory, setChatHistory] = useState<Message[]>([
+  const [chatHistory, setChatHistory] = useState<ChatHistoryMessage[]>([
     {
       role: "assistant",
       content: "Ahoj! Jak vám mohu pomoci najít perfektní Tesla?",
@@ -35,6 +37,7 @@ export function CarSalesChat() {
       },
     ],
     handler: async ({ searchTerm }) => {
+      // Zde byste ideálně volali API pro vyhledání aut.
       return `Vyhledávám Tesla vozidla pro: "${searchTerm}"`;
     },
   });
@@ -42,25 +45,27 @@ export function CarSalesChat() {
   const handleSend = async () => {
     if (!userInput.trim()) return;
 
-    const currentInput = userInput;
+    const text = userInput.trim();
     setUserInput("");
 
-    const userMessage: Message = {
-      role: "user",
-      content: currentInput,
-    };
-
-    setChatHistory((prev) => [...prev, userMessage]);
+    // Přidáme zprávu uživatele do lokálního stavu
+    setChatHistory((prev) => [
+      ...prev,
+      { role: "user", content: text },
+    ]);
 
     try {
-      const response = await appendMessage(userMessage);
+      // Vytvoříme instanci TextMessage kompatibilní s CopilotKit
+      const userMsg = new TextMessage({
+        content: text,
+        role: Role.User,
+      });
+      // Odešleme zprávu a počkáme na odpověď asistenta
+      const assistantMsg = await appendMessage(userMsg);
 
       setChatHistory((prev) => [
         ...prev,
-        {
-          role: "assistant",
-          content: response || "Promiňte, něco se pokazilo.",
-        },
+        { role: "assistant", content: assistantMsg.content },
       ]);
     } catch (error) {
       setChatHistory((prev) => [
@@ -77,6 +82,7 @@ export function CarSalesChat() {
   return (
     <div className="max-w-2xl mx-auto p-4 h-screen flex flex-col">
       <h1 className="text-2xl font-bold mb-4">Tesla Asistent</h1>
+
       <Card className="flex-1 overflow-y-auto space-y-2 p-4 bg-gray-50">
         <CardContent className="space-y-4">
           {chatHistory.map((msg, idx) => (
@@ -93,6 +99,7 @@ export function CarSalesChat() {
           ))}
         </CardContent>
       </Card>
+
       <div className="flex gap-2 mt-4">
         <Input
           value={userInput}
@@ -104,12 +111,17 @@ export function CarSalesChat() {
         <Button onClick={handleSend}>Odeslat</Button>
       </div>
 
+      {/* Skrytá komponenta CopilotChat pro zajištění běhu enginu */}
       <div className="hidden">
         <CopilotChat
-          instructions={`Jste asistent na stránce kde lidi inzerují ojeté Tesly. Pomáháte lidem najít správné auto podle jejich požadavků. 
+          instructions={`
+Jste asistent na stránce kde lidi inzerují ojeté Tesly. Pomáháte lidem najít
+správné auto podle jejich požadavků.
+
 DŮLEŽITÉ: Když uživatel hledá auto, VŽDY použijte funkci "searchCars" s parametrem "searchTerm".
-UPOZORNĚNÍ: Nedomlouvej žádné schůzky a drž se pouze toho, že jsi asistent vyhledávání aut na Teslist.cz, kde jsou inzeráty lidí na ojeté Tesly.
-ZÁKAZY: Neřeš nic jiného než je zde popsáno, pokud nevíš, tak napiš že nevíš a NEVYMÝŠLEJ SI!`}
+UPOZORNĚNÍ: Nedomlouvej žádné schůzky a drž se pouze toho, že jsi asistent vyhledávání aut na Teslist.cz.
+ZÁKAZY: Neřeš nic jiného než je zde popsáno, pokud nevíš, tak napiš že nevíš a NEVYMÝŠLEJ SI!
+          `}
           labels={{
             title: "Tesla Asistent",
             initial: "Ahoj! Jak vám mohu pomoci najít perfektní Tesla?",
