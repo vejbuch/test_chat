@@ -15,5 +15,5 @@ module.exports = {
       }
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [], // Odstraň require("tailwindcss-animate")
 };
