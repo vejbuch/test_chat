@@ -5,13 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useCopilotAction, useCopilotChat } from "@copilotkit/react-core";
-import type { CopilotKitMessage } from "@copilotkit/react-core";
+
+// VLASTNÍ definice správného tvaru
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+};
 
 export function CarSalesChat() {
   const [userInput, setUserInput] = useState("");
-  const [chatHistory, setChatHistory] = useState<
-    { role: "user" | "assistant"; content: string }[]
-  >([
+  const [chatHistory, setChatHistory] = useState<Message[]>([
     {
       role: "assistant",
       content: "Ahoj! Jak vám mohu pomoci najít perfektní Tesla?",
@@ -42,18 +45,14 @@ export function CarSalesChat() {
     const currentInput = userInput;
     setUserInput("");
 
-    setChatHistory((prev) => [
-      ...prev,
-      { role: "user", content: currentInput },
-    ]);
+    const userMessage: Message = {
+      role: "user",
+      content: currentInput,
+    };
+
+    setChatHistory((prev) => [...prev, userMessage]);
 
     try {
-      // OPRAVA – vytvoření objektu odpovídajícího typu
-      const userMessage: CopilotKitMessage = {
-        role: "user",
-        content: currentInput,
-      };
-
       const response = await appendMessage(userMessage);
 
       setChatHistory((prev) => [
