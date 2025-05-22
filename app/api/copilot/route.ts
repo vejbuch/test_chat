@@ -6,15 +6,10 @@ import {
 import { NextRequest } from "next/server";
 import { supabase } from "../../../lib/supabase";
 
-// 1. Vytvoř runtime s adapterem
-const runtime = new CopilotRuntime({
-  adapter: new OpenAIAdapter({
-    apiKey: process.env.OPENAI_API_KEY!,
-    model: "gpt-4",
-  }),
-});
+// 1. Vytvoř runtime (bez parametrů!)
+const runtime = new CopilotRuntime();
 
-// 2. Definuj akce přímo při inicializaci runtime
+// 2. Definuj akce
 runtime.defineActions([
   {
     name: "searchCars",
@@ -46,12 +41,19 @@ runtime.defineActions([
   },
 ]);
 
-// 3. Vytvoř handler pro Next.js API route
-export const POST = async (req: NextRequest) => {
+// 3. Vytvoř adaptér pro OpenAI
+const adapter = new OpenAIAdapter({
+  apiKey: process.env.OPENAI_API_KEY!,
+  model: "gpt-4", // nebo "gpt-3.5-turbo"
+});
+
+// 4. Vrať správný handler
+export async function POST(req: NextRequest) {
   const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
     runtime,
+    serviceAdapter: adapter,
     endpoint: "/api/copilot",
   });
 
   return handleRequest(req);
-};
+}
