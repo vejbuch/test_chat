@@ -60,7 +60,7 @@ runtime.actions = [
             imageUrl: car.first_photo_url || "",
             price: car.cena || "Cena na dotaz",
             year: car.year || "",
-            mileage: car.odometer || ""
+            mileage: car.mileage || ""
           }))
         };
         
