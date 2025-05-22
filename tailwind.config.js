@@ -3,10 +3,17 @@ module.exports = {
   content: [
     "./app/**/*.{ts,tsx,js,jsx}",
     "./components/**/*.{ts,tsx,js,jsx}",
-    "./lib/**/*.{ts,tsx,js,jsx}", // pokud používáš utility
+    "./lib/**/*.{ts,tsx,js,jsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        muted: "#f5f5f5", // nebo jakoukoliv světlou barvu
+      },
+      height: {
+        '90vh': '90vh',
+      },
+    },
   },
   plugins: [
     require("tailwindcss-animate"),
