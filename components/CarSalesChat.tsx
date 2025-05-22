@@ -35,31 +35,34 @@ export function CarSalesChat() {
   });
 
   const handleSend = async () => {
-    if (!userInput.trim()) return;
-    
-    // Přidáme uživatelskou zprávu
-    const newUserMessage = { role: "user", content: userInput };
-    setChatHistory(prev => [...prev, newUserMessage]);
-    
-    const currentInput = userInput;
-    setUserInput("");
-    
-    try {
-      // Pošleme zprávu do CopilotKit
-      const response = await appendMessage(currentInput);
-      
-      // Přidáme odpověď asistenta
-      setChatHistory(prev => [...prev, {
+  if (!userInput.trim()) return;
+
+  const newUserMessage = { role: "user", content: userInput };
+  setChatHistory(prev => [...prev, newUserMessage]);
+
+  const currentInput = userInput;
+  setUserInput("");
+
+  try {
+    const response = await appendMessage({ role: "user", content: currentInput });
+
+    setChatHistory(prev => [
+      ...prev,
+      {
         role: "assistant",
-        content: response || "Promiňte, něco se pokazilo."
-      }]);
-    } catch (error) {
-      setChatHistory(prev => [...prev, {
-        role: "assistant", 
-        content: "Promiňte, momentálně nemohu odpovědět. Zkuste to prosím znovu."
-      }]);
-    }
-  };
+        content: response || "Promiňte, něco se pokazilo.",
+      },
+    ]);
+  } catch (error) {
+    setChatHistory(prev => [
+      ...prev,
+      {
+        role: "assistant",
+        content: "Promiňte, momentálně nemohu odpovědět. Zkuste to prosím znovu.",
+      },
+    ]);
+  }
+};
 
   return (
     <div className="max-w-2xl mx-auto p-4 h-screen flex flex-col">
