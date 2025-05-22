@@ -2,9 +2,9 @@
 
 import { CopilotChat } from "@copilotkit/react-ui";
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "./ui/card";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
 
 export function CarSalesChat() {
   const [userInput, setUserInput] = useState("");
